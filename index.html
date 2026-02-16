@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Absensi Anggota PNR</title>
+<style>
+body{
+    font-family: Arial, sans-serif;
+    background:#0f172a;
+    color:white;
+    text-align:center;
+    padding:20px;
+}
+.container{
+    background:#1e293b;
+    padding:20px;
+    border-radius:15px;
+    max-width:500px;
+    margin:auto;
+}
+input, select, button{
+    width:100%;
+    padding:10px;
+    margin:8px 0;
+    border-radius:8px;
+    border:none;
+}
+button{
+    background:#22c55e;
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+}
+button:hover{
+    opacity:0.8;
+}
+.small{
+    font-size:12px;
+    opacity:0.7;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h2>ABSENSI ANGGOTA PNR</h2>
+
+    <input type="text" id="webhook" placeholder="Masukkan Webhook Discord">
+
+    <input type="text" id="nama" placeholder="Nama Anggota" required>
+    <input type="text" id="pangkat" placeholder="Pangkat / Jabatan">
+
+    <select id="status">
+        <option value="Hadir">Hadir</option>
+        <option value="Izin">Izin</option>
+    </select>
+
+    <select id="mention">
+        <option value="">Tanpa Mention</option>
+        <option value="@everyone">@everyone</option>
+        <option value="@here">@here</option>
+    </select>
+
+    <input type="file" id="fileInput" multiple>
+
+    <button onclick="kirimAbsensi()">Kirim Absensi</button>
+    <p class="small">Webhook akan tersimpan otomatis di browser kamu</p>
+</div>
+
+<script>
+
+// Load webhook dari localStorage
+window.onload = function() {
+    const savedWebhook = localStorage.getItem("webhookPNR");
+    if(savedWebhook){
+        document.getElementById("webhook").value = savedWebhook;
+    }
+}
+
+async function kirimAbsensi() {
+
+    const webhookURL = document.getElementById("webhook").value;
+    const nama = document.getElementById("nama").value;
+    const pangkat = document.getElementById("pangkat").value;
+    const status = document.getElementById("status").value;
+    const mention = document.getElementById("mention").value;
+    const files = document.getElementById("fileInput").files;
+
+    if(!webhookURL){
+        alert("Webhook wajib diisi!");
+        return;
+    }
+
+    if(!nama){
+        alert("Nama wajib diisi!");
+        return;
+    }
+
+    // Simpan webhook ke browser
+    localStorage.setItem("webhookPNR", webhookURL);
+
+    let warna = status === "Hadir" ? 5763719 : 65535;
+
+    let formData = new FormData();
+
+    let payload = {
+        content: mention,
+        embeds: [{
+            title: "📋 ABSENSI ANGGOTA PNR",
+            color: warna,
+            fields: [
+                { name: "Nama", value: nama, inline: true },
+                { name: "Pangkat", value: pangkat || "-", inline: true },
+                { name: "Status", value: status, inline: false }
+            ],
+            footer: {
+                text: "Sistem Absensi PNR"
+            },
+            timestamp: new Date()
+        }]
+    };
+
+    formData.append("payload_json", JSON.stringify(payload));
+
+    for (let i = 0; i < files.length; i++) {
+        formData.append(`files[${i}]`, files[i]);
+    }
+
+    await fetch(webhookURL, {
+        method: "POST",
+        body: formData
+    });
+
+    alert("Absensi berhasil dikirim!");
+}
+</script>
+
+</body>
+</html>
